@@ -21,7 +21,7 @@ type Context struct {
 	StatusCode int
 }
 
-func (content *Context) ParseParam(key string) string {
+func (content *Context) Param(key string) string {
 	value, _ := content.Params[key]
 	return value
 }

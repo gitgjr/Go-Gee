@@ -16,11 +16,11 @@ func main() {
 	})
 
 	server1.GET("/hello/:name", func(c *gee.Context) {
-		c.String(http.StatusOK, "hello %s, you're at %s\n", c.ParseParam("name"), c.Path)
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
 	})
 
 	server1.GET("/assets/*filepath", func(c *gee.Context) {
-		c.JSON(http.StatusOK, gee.H{"filepath": c.ParseParam("filepath")})
+		c.JSON(http.StatusOK, gee.H{"filepath": c.Param("filepath")})
 	})
 
 	server1.POST("/login", func(c *gee.Context) {

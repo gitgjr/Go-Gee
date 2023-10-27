@@ -1,18 +1,18 @@
 package gee
 
 import (
-	"fmt"
+	"net/http"
 	"strings"
 )
 
-type Router struct {
-	roots    map[string]*Node
+type router struct {
+	roots    map[string]*node
 	handlers map[string]HandlerFunc //key: Method-URL value handler function
 }
 
-func NewRouter() *Router {
-	return &Router{
-		roots:    make(map[string]*Node),
+func NewRouter() *router {
+	return &router{
+		roots:    make(map[string]*node),
 		handlers: make(map[string]HandlerFunc),
 	}
 }
@@ -24,55 +24,58 @@ func parsePattern(pattern string) []string {
 	for _, item := range patternArray {
 		if item != "" {
 			parts = append(parts, item)
-			if item == "*" {
+			if item[0] == '*' {
 				break
 			}
 		}
 
 	}
-	fmt.Println(parts)
+
 	return parts
 }
 
-func (router *Router) addRoute(method string, pattern string, handler HandlerFunc) {
+func (router *router) addRoute(method string, pattern string, handler HandlerFunc) {
 
 	parts := parsePattern(pattern)
 	//log.Printf("Route %4s - %s", method, pattern)
 	key := method + "-" + pattern
 	_, ok := router.roots[method]
 	if !ok {
-		router.roots[method] = &Node{}
+		router.roots[method] = &node{}
 	}
 	router.roots[method].insert(pattern, parts, 0)
 	router.handlers[key] = handler
 }
 
-func (router *Router) getRoute(method string, pattern string) (*Node, map[string]string) {
-	parts := parsePattern(pattern)
+func (router *router) getRoute(method string, path string) (*node, map[string]string) {
+	searchParts := parsePattern(path)
 	params := make(map[string]string)
 	root, ok := router.roots[method]
 
 	if !ok {
 		return nil, nil
 	}
-	node := root.search(parts, 0)
-	if node != nil {
-		parts := parsePattern(node.pattern)
+
+	n := root.search(searchParts, 0)
+
+	if n != nil {
+		parts := parsePattern(n.pattern)
 		for index, part := range parts {
 			if part[0] == ':' {
-				params[part[1:]] = parts[index]
+				params[part[1:]] = searchParts[index]
 			}
 			if part[0] == '*' && len(part) > 1 {
-				params[part[1:]] = strings.Join(parts[index:], "/")
+				params[part[1:]] = strings.Join(searchParts[index:], "/")
 				break
 			}
 		}
-		return node, params
+		return n, params
 	}
-	return nil, nil
-} //TODO can not understand
 
-func (router *Router) Handle(context *Context) {
+	return nil, nil
+}
+
+func (router *router) Handle(context *Context) {
 	node, params := router.getRoute(context.Method, context.Path)
 
 	if node != nil {
@@ -81,7 +84,7 @@ func (router *Router) Handle(context *Context) {
 		handler, _ := router.handlers[key]
 		handler(context)
 	} else {
-		fmt.Fprint(context.Writer, "404 page not found: ", context.Req.URL.Path)
+		context.String(http.StatusNotFound, "404 NOT FOUND: %s\n", context.Path)
 	}
 
 }

@@ -7,7 +7,7 @@ import (
 type HandlerFunc func(*Context)
 
 type Engine struct {
-	router *Router //key: Method-pattern value:HandlerFunc
+	router *router //key: Method-pattern value:HandlerFunc
 }
 
 func New() *Engine {
